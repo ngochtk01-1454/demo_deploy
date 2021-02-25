@@ -1,0 +1,47 @@
+version: 2
+jobs:
+  build:
+    docker:
+      - image: circleci/php:7.3.8-node-browsers
+    steps:
+      - checkout
+      - run:
+          name: set up env
+          command: |
+            cp .env.testing.example .env
+      # composer cache
+      - restore_cache:
+          keys:
+            - vendor-v1-{{ checksum "composer.lock" }}
+      - run:
+          name: composer install
+          command: |
+            composer install
+      - save_cache:
+          key: vendor-v1-{{ checksum "composer.lock" }}
+          paths:
+            - vendor
+      - run:
+          name: key generate
+          command: |
+            php artisan key:generate
+      - run:
+          name: add phpcs
+          command: |
+            composer global require "squizlabs/php_codesniffer=*"
+      - run:
+          name: add standard
+          command: |
+            git clone https://github.com/wataridori/framgia-php-codesniffer.git ~/.composer/vendor/squizlabs/php_codesniffer/src/Standards/Framgia
+      - run:
+          name: config installed path
+          command: ~/.composer/vendor/bin/phpcs --config-set installed_paths ~/.composer/vendor/squizlabs/php_codesniffer/src/Standards/Framgia
+      # run test
+      - run:
+          name: check phpcs
+          command: |
+            sudo ~/.composer/vendor/bin/phpcs --standard=Framgia app --ignore=*/app/Lib/*
+      - run:
+          name: unit test
+          command: |
+            phpdbg -qrr vendor/bin/phpunit --coverage-html build/coverage-report
