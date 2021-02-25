@@ -3,6 +3,7 @@ jobs:
   build:
     docker:
       - image: circleci/php:7.3.8-node-browsers
+    working_directory: ~/laravel
     steps:
       - checkout
       - run:
@@ -46,22 +47,32 @@ jobs:
           command: |
             phpdbg -qrr vendor/bin/phpunit --coverage-html build/coverage-report
   deploy_development:
-    # requires:
-    #         - build
-    #       filters:
-    #         branches:
-    #           only: master
     docker:
       - image: framgiaciteam/deb-deploy:7.3
+    working_directory: ~/laravel
     steps:
       - add_ssh_keys:
           fingerprints:
-            - "46:25:f7:0b:0d:15:97:be:20:7a:66:ad:94:71:53:c5"
+            - "e8:d9:fb:2a:dd:a7:fe:eb:d2:b3:ad:ec:d6:23:b8:d1"
       - checkout
+      - run:
+          name: Install Deployer
+          command: |
+            curl -LO https://deployer.org/deployer.phar
+            mv deployer.phar /usr/local/bin/dep
+            chmod +x /usr/local/bin/dep
       - run:
           name: Deploy Develop to development
           command: |
-            if [ -z `ssh-keygen -F '143.110.209.111'` ]; then
-              ssh-keyscan -H '143.110.209.111' >> ~/.ssh/known_hosts
-            fi
-            dep deploy development
+            dep deployer development
+workflows:
+  version: 2
+  build-and-deploy:
+    jobs:
+      - build
+      - deploy_development:
+          requires:
+            - build
+          filters:
+            branches:
+              only: master
