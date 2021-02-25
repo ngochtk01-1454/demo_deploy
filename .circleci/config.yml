@@ -45,3 +45,23 @@ jobs:
           name: unit test
           command: |
             phpdbg -qrr vendor/bin/phpunit --coverage-html build/coverage-report
+  deploy_development:
+    # requires:
+    #         - build
+    #       filters:
+    #         branches:
+    #           only: master
+    docker:
+      - image: framgiaciteam/deb-deploy:7.3
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "46:25:f7:0b:0d:15:97:be:20:7a:66:ad:94:71:53:c5"
+      - checkout
+      - run:
+          name: Deploy Develop to development
+          command: |
+            if [ -z `ssh-keygen -F '143.110.209.111'` ]; then
+              ssh-keyscan -H '143.110.209.111' >> ~/.ssh/known_hosts
+            fi
+            dep deploy development
