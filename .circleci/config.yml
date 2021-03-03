@@ -3,7 +3,6 @@ jobs:
   build:
     docker:
       - image: circleci/php:7.3.8-node-browsers
-    working_directory: ~/laravel
     steps:
       - checkout
       - run:
@@ -49,11 +48,12 @@ jobs:
   deploy_development:
     docker:
       - image: framgiaciteam/deb-deploy:7.3
-    working_directory: ~/laravel
     steps:
       - add_ssh_keys:
           fingerprints:
             - "e8:d9:fb:2a:dd:a7:fe:eb:d2:b3:ad:ec:d6:23:b8:d1"
+      # - run: |
+      #     echo '|1|J8kUwIkKAzdz3RYhnJc4C6fCEZY=|IWIMM8uvXQHFoLeBJdTi5qpP/Vw= ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAAAIbmlzdHAyNTYAAABBBLAHYBw+jWGIbUgSSU9iK50KYzdnuocM+J+nljHpJh22xpw1+GDh054uOun1PM+1LM46hNKbIjVpzoSMkS1ca6I=' >> ~/.ssh/known_hosts
       - checkout
       - run:
           name: Install Deployer
@@ -64,15 +64,22 @@ jobs:
       - run:
           name: Deploy Develop to development
           command: |
+            if [ -z `ssh-keygen -F '143.110.209.111'` ]; then
+                ssh-keyscan -H '143.110.209.111' >> ~/.ssh/known_hosts
+            fi
             dep deployer development
 workflows:
   version: 2
   build-and-deploy:
     jobs:
       - build
-      - deploy_development:
+      - hold_approval:
+          type: approval
           requires:
             - build
+      - deploy_development:
+          requires:
+            - hold_approval
           filters:
             branches:
               only: master
