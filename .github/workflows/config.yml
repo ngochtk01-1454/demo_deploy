@@ -2,8 +2,6 @@ name: PR WorkFlow
 
 on:
   pull_request:
-    branches:
-      - master
   push:
     branches:
       - master
@@ -31,10 +29,11 @@ jobs:
         env:
           DB_PORT: ${{ job.services.mysql.ports[3306] }}
         run: ./vendor/bin/phpunit
-  deploy-staging:
-    name: Deploy Project to STAGING Server
+  deploy-develop:
+    name: Deploy Project to Develop Server
     runs-on: ubuntu-latest
     needs: [app-tests]
+    if: github.ref == 'refs/heads/master'
     steps:
       - uses: actions/checkout@v1
       - name: Setup PHP
@@ -49,7 +48,7 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
           ssh-known-hosts: ${{ secrets.SSH_KNOWN_HOSTS }}
-      - name: Deploy to Prod
+      - name: Deploy to Develop
         env:
           DOT_ENV: ${{ secrets.DOT_ENV_DEV }}
         run: dep deploy development --tag=${{ env.GITHUB_REF }} -vvv
