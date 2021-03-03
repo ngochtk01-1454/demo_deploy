@@ -2,9 +2,9 @@ name: PR WorkFlow
 
 on:
   pull_request:
-  push:
-    branches:
-      - master
+  # push:
+  #   branches:
+  #     - master
 
 jobs:
   app-tests:
